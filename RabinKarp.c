@@ -1,110 +1,142 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <limits.h>
+#include <locale.h>
 #include "utils.c"
 
-#define fileMax 100
-#define patternMax 60
-#define alphabet 256
-#define prime 29
+#define alfabeto 256
+#define prime 30
 
-void start();
-void search();
+void rabinKarp(char texto[], char frase[]);
 
-void main()
+void Menu(char texto[], char frase[], char arquivo[])
 {
-  clear();
-  start();
+  int opcao;
+
+  do
+  {
+    clear();
+    printf("Frase: %s\n\n", frase);
+    printf("Deseja continuar?\n");
+    printf("1 - Continuar\n");
+    printf("2 - Sair\n\n");
+    printf("Opção: ");
+    scanf("%d%*c", &opcao);
+
+    switch (opcao)
+    {
+    case 1:
+      rabinKarp(texto, frase);
+      break;
+    }
+  } while (opcao != 2);
+  printf("\n\n Até Logo! \n\n");
 }
 
-void search(char text[], char pattern[])
+void startConfig()
 {
-  int i, j;
-  int hash = 1;
-  int matches;
-  int patternHash = 0;
-  int textHash = 0;
-  int patternLength = strlen(pattern);
-  int textLength = strlen(text);
+  char arquivo[999999];
+  char texto[999999];
+  char frase[300];
 
-  clear();
-  printf("Rabin Karp\n\n");
-
-  for (i = 0; i < patternLength - 1; i++)
-  {
-    hash = (hash * alphabet) % prime;
-  }
-
-  for (i = 0; i < patternLength; i++)
-  {
-    patternHash = (alphabet * patternHash + pattern[i]) % prime;
-    textHash = (alphabet * textHash + text[i]) % prime;
-  }
-
-  for (i = 0; i <= textLength - patternLength; i++)
-  {
-    if (patternHash == textHash)
-    {
-      for (j = 0; j < patternLength; j++)
-      {
-        if (text[i + j] != pattern[j])
-          break;
-      }
-
-      if (j == patternLength)
-      {
-        matches++;
-        printf("Padrao encontrado no indice %d \n", i);
-      }
-    }
-
-    if (i < textLength - patternLength)
-    {
-      textHash = (alphabet * (textHash - text[i] * hash) + text[i + patternLength]) % prime;
-
-      if (textHash < 0)
-        textHash = (textHash + prime);
-    }
-  }
-
-  if (matches == 0)
-    printf("padrao nao encontrado\n");
-
-  getchar();
-}
-
-void start()
-{
-  char file[CHAR_MAX];
-  char text[CHAR_MAX];
-  char pattern[patternMax];
-
-  printf("Insira o caminho do arquivo: ");
-  fgets(file, fileMax, stdin);
-  file[strcspn(file, "\n")] = 0;
+  printf("- Insira o nome do arquivo: ");
+  fgets(arquivo, 9999999, stdin);
+  arquivo[strcspn(arquivo, "\n")] = 0;
 
   clear();
 
   FILE *arq;
-  arq = fopen(file, "r");
+  arq = fopen(arquivo, "r");
 
   if (arq == NULL)
   {
-    printf("Algo de errado nao esta certo, tente novamente!");
-    pause();
+    printf("Arquivo não encontrado, tente novamente \n");
+    system("pause");
     clear();
-    start();
+    startConfig();
   }
   else
   {
-    fgets(text, sizeof(text), arq);
+    fgets(texto, sizeof(texto), arq);
     fclose(arq);
   }
 
-  printf("Insira o padrao: ");
-  fgets(pattern, 100, stdin);
-  pattern[strcspn(pattern, "\n")] = 0;
+  printf("- Insira a frase que deseja procurar: ");
+  fgets(frase, 300, stdin);
+  frase[strcspn(frase, "\n")] = 0;
 
-  search(text, pattern);
+  Menu(texto, frase, arquivo);
 }
+
+void rabinKarp(char texto[], char frase[])
+{
+  clear();
+  printf("------------------------ \n");
+  printf("------ Rabin Karp ------ \n");
+  printf("------------------------ \n\n");
+
+  int i, j;
+  int hash = 1;
+  int acertos;
+  int hashFrase = 0;
+  int hashTexto = 0;
+  int tamFrase = strlen(frase);
+  int tamTexto = strlen(texto);
+
+  // Calcula o hash
+  for (i = 0; i < tamFrase - 1; i++)
+    hash = (hash * alfabeto) % prime;
+
+  // Calcula o hash do frase e da primeira janela
+  for (i = 0; i < tamFrase; i++)
+  {
+    hashFrase = (alfabeto * hashFrase + frase[i]) % prime;
+    hashTexto = (alfabeto * hashTexto + texto[i]) % prime;
+  }
+
+  for (i = 0; i <= tamTexto - tamFrase; i++)
+  {
+    // Caso aconteça de match entre hash's, analise cada posição
+    if (hashFrase == hashTexto)
+    {
+      for (j = 0; j < tamFrase; j++)
+      {
+        if (texto[i + j] != frase[j])
+          break;
+      }
+
+      // Se o tamanho total de acertos for igual ao do frase, então mostre o index
+      if (j == tamFrase)
+      {
+        acertos++;
+        printf("Texto encontrado na coluna %d \n", i);
+        printf("\n\n Pressione qualquer tecla para continuar \n");
+      }
+    }
+
+    // Calcula o hash da proxima janela removendo o ultimo index utilizado e adicionado um novo
+    if (i < tamTexto - tamFrase)
+    {
+      hashTexto = (alfabeto * (hashTexto - texto[i] * hash) + texto[i + tamFrase]) % prime;
+
+      // Caso o valor seja dado como negativo, então ele é convertido com o número primo
+      if (hashTexto < 0)
+        hashTexto = (hashTexto + prime);
+    }
+  }
+  // Caso não exista matches
+  if (acertos == 0)
+  {
+    printf("Não existe este trecho de texto no arquivo\n");
+    printf("Pressione qualquer tecla para continuar \n");
+  }
+  getchar();
+};
+
+int main()
+{
+  setlocale(LC_ALL, "Portuguese");
+  clear();
+  printf("Escreva o nome do arquivo que deseja encontrar a frase\n");
+  printf("O arquivo deve ser infomado com a extenção .txt\n\n");
+  startConfig();
+};
